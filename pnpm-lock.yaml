@@ -896,6 +896,9 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/react@18.3.28)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.0
+        version: 9.39.4
       '@types/react':
         specifier: ^18.3.3
         version: 18.3.28
@@ -908,9 +911,15 @@ importers:
       eslint:
         specifier: ^9.0.0
         version: 9.39.4
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.4)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.44.0
+        version: 8.58.0(eslint@9.39.4)(typescript@5.9.3)
       vite:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@25.0.6)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
@@ -1053,6 +1062,18 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.27
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.19.0
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^6.19.0
+        version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.56.0
+        version: 8.57.1
+      eslint-config-prettier:
+        specifier: ^9.1.0
+        version: 9.1.2(eslint@8.57.1)
       typescript:
         specifier: ^5.3.3
         version: 5.9.3

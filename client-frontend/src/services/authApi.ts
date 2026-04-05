@@ -1,5 +1,4 @@
 import { apiClient } from './apiClient';
-import { unwrapResponse } from './apiTypes';
 
 interface ApiEnvelope<T> {
   success: boolean;

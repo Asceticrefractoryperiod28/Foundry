@@ -267,8 +267,9 @@ export const CollaborationPage: React.FC = () => {
         const streamId = `ceo_report:${(msg.metadata as { traceId: string }).traceId}`;
         setStreamBuffers((prev) => {
           if (!prev[streamId]) return prev;
-          const { [streamId]: _omit, ...rest } = prev;
-          return rest;
+          const next = { ...prev };
+          delete next[streamId];
+          return next;
         });
       }
       setLive((prev) => {

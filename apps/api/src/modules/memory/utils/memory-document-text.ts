@@ -23,7 +23,7 @@ export async function extractTextFromDocumentBuffer(
         data: Buffer,
       ) => Promise<{ text?: string }>;
       const res = await pdfParse(buf);
-      const text = (res.text ?? '').replace(/\u0000/g, '').trim();
+      const text = (res.text ?? '').split('\0').join('').trim();
       return { text, detectedAs: 'pdf' };
     } catch (e: any) {
       logger.warn('pdf-parse failed', { message: e?.message, pathHint });

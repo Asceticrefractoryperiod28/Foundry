@@ -5,7 +5,6 @@
 import * as amqp from 'amqplib';
 import type {
   MessageQueueAdapter,
-  MessageQueueOptions,
   RabbitMQOptions,
   PublishOptions,
   SubscribeOptions,

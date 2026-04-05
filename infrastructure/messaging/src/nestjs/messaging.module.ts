@@ -3,14 +3,8 @@
  */
 
 import { Module, DynamicModule, Global } from '@nestjs/common';
-import type {
-  MessageQueueAdapter,
-  MessageQueueConfig,
-} from '../types/index.js';
-import {
-  MessageQueueAdapterFactory,
-  messageQueueFactory,
-} from '../factory/message-queue.factory.js';
+import type { MessageQueueConfig } from '../types/index.js';
+import { MessageQueueAdapterFactory } from '../factory/message-queue.factory.js';
 import { MessagingService } from './messaging.service.js';
 import { MESSAGING_ADAPTER, MESSAGING_CONFIG } from './messaging.constants.js';
 

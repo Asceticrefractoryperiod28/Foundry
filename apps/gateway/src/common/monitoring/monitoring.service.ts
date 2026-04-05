@@ -314,7 +314,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     const pathWithoutQuery = path.split('?')[0];
     
     // 替换常见的ID模式
-    let normalized = pathWithoutQuery
+    const normalized = pathWithoutQuery
       .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
       .replace(/\/\d+/g, '/:id');
     
