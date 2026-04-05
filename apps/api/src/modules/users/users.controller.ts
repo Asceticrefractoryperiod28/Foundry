@@ -20,6 +20,8 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import type { User } from './entities/user.entity.js';
+import type { IPaginatedResult } from './interfaces/user.interface.js';
 import { UsersService } from './users.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -95,11 +97,14 @@ export class UsersController {
   @ApiQuery({ type: QueryUserDto })
   @ApiResponse({ status: 200, description: '查询成功' })
   @ApiResponse({ status: 401, description: '未授权' })
-  async findAll(@Query() queryDto: QueryUserDto) {
+  async findAll(
+    @Query() queryDto: QueryUserDto,
+  ): Promise<IPaginatedResult<Omit<User, 'passwordHash'>>> {
     const result = await this.usersService.findAll(queryDto);
-    // 不返回密码哈希
-    result.items = result.items.map(({ passwordHash, ...user }) => user);
-    return result;
+    return {
+      ...result,
+      items: result.items.map(({ passwordHash: _p, ...user }) => user),
+    };
   }
 
   /**

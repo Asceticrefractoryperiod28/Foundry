@@ -67,9 +67,6 @@ export class CompanyTemplate {
   updatedAt: Date;
 
   /** 惰性解析，避免与 TemplateContent 循环 import 导致 TDZ */
-  @OneToOne(
-    () => 'TemplateContent',
-    (c: any) => c.template,
-  )
+  @OneToOne('TemplateContent', (c: any) => c.template)
   content?: any;
 }

@@ -18,11 +18,7 @@ export class TemplateContent {
   content: Record<string, unknown>;
 
   /** 惰性解析，避免与 CompanyTemplate 循环 import 导致 TDZ */
-  @OneToOne(
-    () => 'CompanyTemplate',
-    (t: any) => t.content,
-    { onDelete: 'CASCADE' },
-  )
+  @OneToOne('CompanyTemplate', (t: any) => t.content, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'template_id' })
   template: any;
 

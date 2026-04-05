@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { type DeepPartial, Repository } from 'typeorm';
 import { createHash } from 'crypto';
 import AdmZip from 'adm-zip';
 import matter from 'gray-matter';
@@ -397,7 +397,7 @@ export class SkillsAdminService {
         scanResult: input.scan ? { ...input.scan } : null,
         riskLevel: input.scan?.riskLevel ?? null,
         reviewStatus: input.overrideReviewStatus ?? 'logged',
-      }),
+      } as unknown as DeepPartial<SkillAuditLog>),
     );
   }
 
@@ -460,7 +460,7 @@ export class SkillsAdminService {
   async updateGlobal(id: string, dto: any, actor: AdminActor): Promise<Skill> {
     assertAdmin(actor);
 
-    const skill = await this.findGlobalOne(id);
+    const skill = await this.findGlobalOne(id, actor);
     // Snapshot before mutation for audit log accuracy.
     const before = { ...skill } as Skill;
 
@@ -497,7 +497,7 @@ export class SkillsAdminService {
 
   async removeGlobal(id: string, actor: AdminActor): Promise<{ success: true }> {
     assertAdmin(actor);
-    const skill = await this.findGlobalOne(id);
+    const skill = await this.findGlobalOne(id, actor);
     await this.recordAuditLog({
       companyId: null,
       skillId: skill.id,

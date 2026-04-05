@@ -4,6 +4,7 @@ export type TaskDomainStatus =
   | 'pending'
   | 'in_progress'
   | 'review'
+  | 'awaiting_approval'
   | 'completed'
   | 'blocked'
   | 'cancelled';

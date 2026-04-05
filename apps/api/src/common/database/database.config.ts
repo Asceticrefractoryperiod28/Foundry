@@ -46,10 +46,8 @@ export function createDatabaseConfig(
     extra: {
       ...poolConfig,
       statement_timeout: dbConfig.queryTimeout ?? 30000,
+      acquireTimeoutMillis: 60000,
     },
-    // 连接池配置
-    poolSize: dbConfig.maxConnections ?? 20,
-    acquireTimeoutMillis: 60000,
     // 实体路径（将在 entities 目录中定义）
     // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   };

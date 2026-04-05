@@ -5,7 +5,7 @@ import { ErrorCode } from '../../../common/exceptions/error-codes.js';
 import { QueryMarketplaceDto } from '../dto/query-marketplace.dto.js';
 import { MarketplaceAgent } from '../entities/marketplace-agent.entity.js';
 
-interface PaginatedResult<T> {
+export interface PaginatedResult<T> {
   items: T[];
   total: number;
   page: number;

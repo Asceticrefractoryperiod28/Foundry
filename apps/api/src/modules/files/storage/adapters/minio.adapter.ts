@@ -89,26 +89,17 @@ export class MinIOStorageAdapter
   }
 
   async download(path: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-
-      this.client.getObject(this.bucketName, path, (err, dataStream) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        dataStream.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-
-        dataStream.on('end', () => {
-          resolve(Buffer.concat(chunks));
-        });
-
-        dataStream.on('error', (error) => {
-          reject(error);
-        });
+    const dataStream = await this.client.getObject(this.bucketName, path);
+    const chunks: Buffer[] = [];
+    return await new Promise((resolve, reject) => {
+      dataStream.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+      dataStream.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
+      dataStream.on('error', (error: Error) => {
+        reject(error);
       });
     });
   }

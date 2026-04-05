@@ -58,7 +58,7 @@ export class CollaborationRealtimePublisher implements OnModuleDestroy {
     const url = buildRedisUrl(this.config.getRedisConfig());
     const c = createClient({ url });
     await c.connect();
-    this.client = c;
+    this.client = c as RedisClientType;
     return this.client;
   }
 

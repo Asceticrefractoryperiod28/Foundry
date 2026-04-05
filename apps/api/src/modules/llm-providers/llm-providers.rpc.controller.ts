@@ -55,7 +55,7 @@ export class LlmProvidersRpcController {
   constructor(private readonly providers: LlmProvidersService) {}
 
   @MessagePattern('llmProviders.admin.list')
-  async adminList(@Type(() => AdminListProvidersRpcDto) payload: unknown): Promise<{ items: LlmProviderInfo[] }> {
+  async adminList(payload: unknown): Promise<{ items: LlmProviderInfo[] }> {
     try {
       const dto = validateRpcDto(AdminListProvidersRpcDto, payload);
       assertAdmin(dto.actor);
@@ -67,7 +67,7 @@ export class LlmProvidersRpcController {
   }
 
   @MessagePattern('llmProviders.admin.create')
-  async adminCreate(@Type(() => AdminCreateProviderRpcDto) payload: unknown): Promise<LlmProviderInfo> {
+  async adminCreate(payload: unknown): Promise<LlmProviderInfo> {
     try {
       const dto = validateRpcDto(AdminCreateProviderRpcDto, payload);
       assertAdmin(dto.actor);

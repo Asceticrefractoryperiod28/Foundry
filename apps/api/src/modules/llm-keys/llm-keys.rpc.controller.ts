@@ -127,7 +127,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.list')
-  async adminList(@Type(() => AdminListKeysRpcDto) payload: unknown): Promise<{ items: LlmKeyInfo[]; total: number; page: number; pageSize: number }> {
+  async adminList(payload: unknown): Promise<{ items: LlmKeyInfo[]; total: number; page: number; pageSize: number }> {
     try {
       const dto = validateRpcDto(AdminListKeysRpcDto, payload);
       assertAdmin(dto.actor);
@@ -144,7 +144,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.create')
-  async adminCreate(@Type(() => AdminCreateKeyRpcDto) payload: unknown): Promise<LlmKeyInfo> {
+  async adminCreate(payload: unknown): Promise<LlmKeyInfo> {
     try {
       const dto = validateRpcDto(AdminCreateKeyRpcDto, payload);
       assertAdmin(dto.actor);
@@ -173,7 +173,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.rotate')
-  async adminRotate(@Type(() => AdminRotateKeyRpcDto) payload: unknown): Promise<LlmKeyInfo> {
+  async adminRotate(payload: unknown): Promise<LlmKeyInfo> {
     try {
       const dto = validateRpcDto(AdminRotateKeyRpcDto, payload);
       assertAdmin(dto.actor);
@@ -195,7 +195,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.disable')
-  async adminDisable(@Type(() => AdminIdRpcDto) payload: unknown): Promise<LlmKeyInfo> {
+  async adminDisable(payload: unknown): Promise<LlmKeyInfo> {
     try {
       const dto = validateRpcDto(AdminIdRpcDto, payload);
       assertAdmin(dto.actor);
@@ -206,7 +206,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.enable')
-  async adminEnable(@Type(() => AdminIdRpcDto) payload: unknown): Promise<LlmKeyInfo> {
+  async adminEnable(payload: unknown): Promise<LlmKeyInfo> {
     try {
       const dto = validateRpcDto(AdminIdRpcDto, payload);
       assertAdmin(dto.actor);
@@ -217,7 +217,7 @@ export class LlmKeysRpcController {
   }
 
   @MessagePattern('llmKeys.admin.remove')
-  async adminRemove(@Type(() => AdminIdRpcDto) payload: unknown): Promise<void> {
+  async adminRemove(payload: unknown): Promise<void> {
     try {
       const dto = validateRpcDto(AdminIdRpcDto, payload);
       assertAdmin(dto.actor);

@@ -130,7 +130,7 @@ export class AlertsService {
     if (!companyId) {
       throw new ForbiddenException({ code: ErrorCode.FORBIDDEN, message: 'Global alerts cannot be resolved (MVP)' });
     }
-    await this.tenantRls.withTenantTransaction(this.dataSource, companyId, async (manager) => {
+    await this.tenantRls.withTenantTransaction(this.dataSource as any, companyId, async (manager) => {
       alert.status = 'resolved';
       alert.handledAt = new Date();
       alert.handledBy = actor.id;
@@ -149,7 +149,7 @@ export class AlertsService {
 
   async createAlert(input: AlertCreateInput): Promise<AdminAlert> {
     // Writes should satisfy RLS WITH CHECK. We set local current tenant to companyId.
-    return await this.tenantRls.withTenantTransaction(this.dataSource, input.companyId, async (manager) => {
+    return await this.tenantRls.withTenantTransaction(this.dataSource as any, input.companyId, async (manager) => {
       const row = this.alertsRepo.create({
         companyId: input.companyId,
         agentId: input.agentId ?? null,

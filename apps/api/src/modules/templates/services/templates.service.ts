@@ -9,7 +9,7 @@ import { CompanyTemplate } from '../entities/company-template.entity.js';
 import { TemplateAgentMapping } from '../entities/template-agent-mapping.entity.js';
 import { TemplateContent } from '../entities/template-content.entity.js';
 
-interface PaginatedResult<T> {
+export interface PaginatedResult<T> {
   items: T[];
   total: number;
   page: number;

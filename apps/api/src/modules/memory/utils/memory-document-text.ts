@@ -19,9 +19,13 @@ export async function extractTextFromDocumentBuffer(
 
   if (treatAsPdf) {
     try {
-      const pdfParse = (await import('pdf-parse')).default as (
-        data: Buffer,
-      ) => Promise<{ text?: string }>;
+      const mod = (await import('pdf-parse')) as {
+        default?: (data: Buffer) => Promise<{ text?: string }>;
+      };
+      const pdfParse =
+        typeof mod.default === 'function'
+          ? mod.default
+          : (mod as unknown as (data: Buffer) => Promise<{ text?: string }>);
       const res = await pdfParse(buf);
       const text = (res.text ?? '').split('\0').join('').trim();
       return { text, detectedAs: 'pdf' };

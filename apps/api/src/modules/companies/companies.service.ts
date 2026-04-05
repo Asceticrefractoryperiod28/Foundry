@@ -37,7 +37,7 @@ interface Actor {
   roles?: string[];
 }
 
-interface PaginatedResult<T> {
+export interface PaginatedResult<T> {
   items: T[];
   total: number;
   page: number;

@@ -263,7 +263,7 @@ export class OrganizationService {
         },
       ];
     }
-    const rows = (await this.findDescendantAgents(nodeId, true)) as Record<
+    const rows = (await this.findDescendantAgents(nodeId, true)) as unknown as Record<
       string,
       unknown
     >[];
