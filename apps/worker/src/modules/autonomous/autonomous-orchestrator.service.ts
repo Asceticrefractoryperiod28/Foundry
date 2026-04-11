@@ -246,7 +246,7 @@ export class AutonomousOrchestratorService implements OnModuleInit {
           span.setAttribute('foundry.run_kind', initial.runKind);
           span.setAttribute('gen_ai.operation.name', 'ceo_heartbeat_graph');
           try {
-            // TODO: P8 必须迁移到 runner.execute RPC（当前仍为临时路径：LangGraph/ToolRegistry 内可能触发内置执行）
+            // P8：本图不直接执行 shell；若下游触发 Agent 技能，shell 仅经 AgentExecutionService → RunnerExecutionClient
             const result = await graph.invoke(initial, {
               configurable: { thread_id: threadId },
             });

@@ -41,6 +41,10 @@ describe('PendingAgentTaskExecutionService', () => {
     } as any;
 
     const executionLog = { appendForTask: jest.fn() } as any;
+    const monitoring = {
+      incTaskExecutionResumedAfterApproval: jest.fn(),
+      incTaskExecutionBlockedByApproval: jest.fn(),
+    } as any;
 
     const service = new PendingAgentTaskExecutionService(
       apiRpc,
@@ -48,6 +52,7 @@ describe('PendingAgentTaskExecutionService', () => {
       registry,
       agentExecution,
       executionLog,
+      monitoring,
     );
 
     await service.processPendingForCompany('company-1');

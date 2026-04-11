@@ -43,7 +43,7 @@ describe('AgentExecutionService', () => {
     const guard: any = {
       validateAndConsumeToken: jest.fn().mockResolvedValue(undefined),
     };
-    const svc = new AgentExecutionService(registry, messaging, externalHttp, config, guard, apiRpc);
+    const svc = new AgentExecutionService(registry, messaging, externalHttp, config, guard, apiRpc, undefined);
     const { result, durationMs } = await svc.executeSkill({
       companyId: 'c1',
       agentId: 'a1',
@@ -93,7 +93,7 @@ describe('AgentExecutionService', () => {
     };
     const guard: any = { validateAndConsumeToken: jest.fn() };
     const apiRpc: any = { send: jest.fn(() => of({ allowed: true })) };
-    const svc = new AgentExecutionService(registry, messaging, externalHttp, config, guard, apiRpc);
+    const svc = new AgentExecutionService(registry, messaging, externalHttp, config, guard, apiRpc, undefined);
     await expect(
       svc.executeSkill({
         companyId: 'c1',
@@ -103,5 +103,73 @@ describe('AgentExecutionService', () => {
       }),
     ).rejects.toThrow(/execution token required/);
     expect(guard.validateAndConsumeToken).not.toHaveBeenCalled();
+  });
+
+  it('routes code-run builtin to RunnerExecutionClient', async () => {
+    const published: any[] = [];
+    const messaging: any = {
+      publish: jest.fn(async (e: any) => {
+        published.push(e);
+      }),
+    };
+    const registry = new ToolRegistry();
+    registry.setAgentTools('c1', 'a1', [
+      {
+        id: 'sk-cr',
+        name: 'code-run',
+        category: 'coding',
+        description: null,
+        toolSchema: { type: 'object', properties: {} },
+        promptTemplate: null,
+        implementationType: 'builtin',
+        handlerConfig: null,
+        requiredPermissions: [],
+        version: 1,
+        isPublic: true,
+        isSystem: false,
+      },
+    ]);
+    const externalHttp: any = { execute: jest.fn() };
+    const config: any = {
+      getWorkerActorUserId: () => '00000000-0000-4000-8000-000000000001',
+      getApiRpcTimeoutMs: () => 5000,
+      getExternalSkillBudgetEstimate: () => 0.05,
+    };
+    const apiRpc: any = { send: jest.fn(() => of({ allowed: true })) };
+    const guard: any = { validateAndConsumeToken: jest.fn() };
+    const runnerExecution = {
+      execute: jest.fn().mockResolvedValue({
+        ok: true,
+        policyDecisionId: 'pd1',
+        sandboxId: 'sb1',
+        jobName: 'job1',
+        namespace: 'ns1',
+        mode: 'mock' as const,
+      }),
+    };
+    const svc = new AgentExecutionService(
+      registry,
+      messaging,
+      externalHttp,
+      config,
+      guard,
+      apiRpc,
+      runnerExecution as any,
+    );
+    const { result } = await svc.executeSkill({
+      companyId: 'c1',
+      agentId: 'a1',
+      skillName: 'code-run',
+      args: { command: 'git status' },
+      traceId: 'trace-1',
+    });
+    expect(runnerExecution.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: 'c1',
+        runId: 'trace-1',
+        commandLine: 'git status',
+      }),
+    );
+    expect((result as any).runner?.sandboxId).toBe('sb1');
   });
 });

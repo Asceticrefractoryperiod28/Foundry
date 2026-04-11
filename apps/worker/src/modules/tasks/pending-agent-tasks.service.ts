@@ -584,7 +584,7 @@ export class PendingAgentTaskExecutionService {
           });
         }
 
-        // TODO: P8 必须迁移到 runner.execute RPC（当前仍为临时路径）
+        // P8：shell 类技能（如 code-run）在 AgentExecutionService 内经 RunnerExecutionClient → runner.execute
         const exec = await this.agentExecution.executeSkill({
           companyId,
           agentId: task.assigneeId,

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
 import { randomUUID } from 'crypto';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -9,6 +9,10 @@ import { skillRequiresExecutionToken } from '@foundry/approval-core';
 import { ConfigService } from '../../../common/config/config.service.js';
 import { ExecutionGuardService } from '../../approval/execution-guard.service.js';
 import { ExternalHttpSkillRunnerService } from './external-http-skill-runner.service.js';
+import { RunnerExecutionClient } from '../../../common/runner/runner-execution.client.js';
+
+/** Shell 类 builtin：仅经 Runner Job 执行，禁止 ToolRegistry 内联 handler（见 register-builtins）。 */
+const RUNNER_SHELL_BUILTIN_SKILLS = new Set(['code-run']);
 
 export interface ExecuteSkillParams {
   companyId: string;
@@ -27,6 +31,8 @@ export interface ExecuteSkillParams {
 
 @Injectable()
 export class AgentExecutionService {
+  private readonly logger = new Logger(AgentExecutionService.name);
+
   constructor(
     private readonly registry: ToolRegistry,
     private readonly messagingService: MessagingService,
@@ -34,6 +40,7 @@ export class AgentExecutionService {
     private readonly config: ConfigService,
     private readonly executionGuard: ExecutionGuardService,
     @Inject('API_RPC_CLIENT') private readonly apiRpc: ClientProxy,
+    private readonly runnerExecution: RunnerExecutionClient,
   ) {}
 
   private workerActor() {
@@ -105,6 +112,43 @@ export class AgentExecutionService {
         reason: allowance?.reason,
       });
     }
+  }
+
+  /**
+   * P8：`code-run` 等 shell 能力唯一入口 — apps/runner `runner.execute`。
+   * `args.command` 为单行 shell 命令；高危命令由 Runner CommandPolicyEngine 判定（needsApproval → 传 executionToken）。
+   */
+  private async executeBuiltinViaRunner(params: ExecuteSkillParams): Promise<unknown> {
+    const raw = params.args.command;
+    const commandLine = typeof raw === 'string' ? raw.trim() : '';
+    if (!commandLine) {
+      throw new Error(`Skill "${params.skillName}" requires args.command (non-empty shell command string)`);
+    }
+    const runId = params.traceId?.trim() || randomUUID();
+    const runnerToken = params.executionToken?.trim();
+    const out = await this.runnerExecution.execute({
+      companyId: params.companyId,
+      runId,
+      commandLine,
+      executionTokenId: runnerToken,
+      persistent: true,
+      actor: this.workerActor(),
+    });
+    this.logger.log({
+      msg: 'runner_execute_ok',
+      skillName: params.skillName,
+      companyId: params.companyId,
+      sandboxId: out.sandboxId,
+      jobName: out.jobName,
+      policyDecisionId: out.policyDecisionId,
+      mode: out.mode,
+    });
+    return {
+      ok: true,
+      skillName: params.skillName,
+      runner: out,
+      note: 'stdout/stderr are collected by the Runner Job; use job logs or future streaming (mock mode has no captured stdout in Worker).',
+    };
   }
 
   private async publishSkillBilling(
@@ -185,9 +229,10 @@ export class AgentExecutionService {
       if (snap.implementationType === 'external') {
         await this.assertExternalSkillBudgetAllowance(params, snap);
         result = await this.externalHttp.execute(snap, params.args, { traceId: params.traceId });
+      } else if (RUNNER_SHELL_BUILTIN_SKILLS.has(params.skillName)) {
+        result = await this.executeBuiltinViaRunner(params);
       } else {
-        // builtin (default) / api / langgraph: currently only builtin handler is supported.
-        // TODO: P8 必须迁移到 runner.execute RPC（当前仍为临时路径）
+        // builtin (default): echo 等非 shell handler
         result = await this.registry.execute(
           params.companyId,
           params.agentId,

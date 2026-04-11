@@ -34,6 +34,8 @@ export const configSchema = Joi.object({
   RMQ_URL: Joi.string().optional(),
   /** Worker → apps/runner RMQ 队列（shell/exec 唯一入口） */
   RUNNER_RMQ_RPC_QUEUE: Joi.string().default('runner-rpc-queue'),
+  /** `runner.execute` RPC 超时（毫秒）；Job 创建可能较慢，默认长于普通 API RPC */
+  WORKER_RUNNER_EXECUTE_TIMEOUT_MS: Joi.number().integer().min(5000).max(600000).default(120_000),
   /** 兼容旧配置：若未设置 WORKER_API_RMQ_RPC_QUEUE，则回退到该值 */
   API_RMQ_RPC_QUEUE: Joi.string().default('api-rpc-queue'),
   /** API 自治/后台 RPC 队列名（Worker 默认应使用此队列） */

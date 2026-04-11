@@ -137,7 +137,7 @@ export class CompanyOrchestratorService {
   }
 
   async runBreakdown(event: TaskBreakdownRequestedEvent): Promise<void> {
-    // TODO: P8 必须迁移到 runner.execute RPC（当前仍为临时路径：经 AutonomousOrchestrator → LangGraph）
+    // P8：runBreakdown 仅编排 LangGraph；shell 执行入口为 Agent 技能链 → runner.execute（见 AgentExecutionService）
     await this.autonomous.runBreakdown(event);
   }
 

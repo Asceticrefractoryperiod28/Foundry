@@ -20,10 +20,6 @@ export function registerBuiltinSkillHandlers(
       path: args.path,
       content: '[stub: file read not implemented]',
     }));
-    registry.registerBuiltin('code-run', async (args) => ({
-      ok: true,
-      language: args.language,
-      stdout: '',
-    }));
+    /** `code-run` 不得注册 builtin：必须由 AgentExecutionService → RunnerExecutionClient → runner.execute（P8） */
   }
 }

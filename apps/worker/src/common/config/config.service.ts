@@ -87,6 +87,11 @@ export class ConfigService {
     );
   }
 
+  /** apps/runner `runner.execute` 专用超时 */
+  getRunnerExecuteTimeoutMs(): number {
+    return this.configManager.get<number>('WORKER_RUNNER_EXECUTE_TIMEOUT_MS', 120_000);
+  }
+
   getApiRpcQueue(): string {
     const workerSpecific = this.configManager.get<string>('WORKER_API_RMQ_RPC_QUEUE');
     if (workerSpecific?.trim()) return workerSpecific.trim();

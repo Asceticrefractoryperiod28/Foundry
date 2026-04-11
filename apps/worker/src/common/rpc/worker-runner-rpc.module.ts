@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RMQ_NEST_SOCKET_OPTIONS } from '@service/messaging';
 import { ConfigModule } from '../config/config.module.js';
 import { ConfigService } from '../config/config.service.js';
+import { RunnerExecutionClient } from '../runner/runner-execution.client.js';
 
 /**
  * ClientProxy for apps/runner (isolated command execution). Queue: RUNNER_RMQ_RPC_QUEUE.
@@ -32,6 +33,7 @@ import { ConfigService } from '../config/config.service.js';
       },
     ]),
   ],
-  exports: [ClientsModule],
+  providers: [RunnerExecutionClient],
+  exports: [ClientsModule, RunnerExecutionClient],
 })
 export class WorkerRunnerRpcModule {}
