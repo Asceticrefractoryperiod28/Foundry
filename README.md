@@ -132,6 +132,33 @@ pnpm infra:restart   # Restart all containers
 | Out of memory | Increase Docker memory limit to 8 GB+ in Docker Desktop settings |
 | Slow on Windows | Enable WSL 2 backend for Docker Desktop |
 
+### First Time Setup
+
+After starting the services for the first time:
+
+```bash
+# 1. Run database migrations (create tables)
+pnpm migrate:run
+
+# 2. Open http://localhost:3000 and register your first account
+#    The first registered account automatically becomes admin
+
+# 3. Login to Admin Panel (http://localhost:5173) and configure:
+#    - LLM Keys (OpenAI, Claude, etc.) in Settings → LLM Keys
+#    - Company profile in Settings → Company
+```
+
+> ⚠️ **Important**: The database starts empty. You need to run migrations and register your own admin account. No default credentials are provided for security reasons.
+
+### What's NOT Included (You Need to Configure)
+
+| Item | Where to Configure | Why |
+|------|-------------------|-----|
+| LLM API Keys | Admin Panel → LLM Keys | Required for AI agents to work |
+| Company Info | Admin Panel → Company | Your company name and industry |
+| Agent Skills | Admin Panel → Skills | Enable/disable and configure skills |
+| Email Settings | Admin Panel → Settings | For notifications (optional) |
+
 ---
 
 ## ✨ Features
