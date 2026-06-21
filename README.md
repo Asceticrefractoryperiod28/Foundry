@@ -54,17 +54,35 @@ Foundry is an **open-source AI-powered digital company platform**. Unlike agent 
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### System Requirements
 
-- [Node.js](https://nodejs.org/) >= 20
-- [pnpm](https://pnpm.io/) >= 10
-- [Docker](https://www.docker.com/) + Docker Compose
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| **OS** | Windows 10+, macOS 12+, Ubuntu 20.04+ | Any 64-bit OS |
+| **CPU** | 2 cores | 4+ cores |
+| **RAM** | 8 GB | 16 GB |
+| **Disk** | 10 GB free | 20 GB+ free |
+| **Docker** | 20.10+ | Latest stable |
+| **Node.js** | 20+ | 22 LTS |
+| **pnpm** | 10+ | Latest |
+
+### What's Included (No Separate Installation Needed)
+
+All infrastructure runs in Docker — **you don't need to install these separately**:
+
+| Service | Purpose | Docker Image |
+|---------|---------|--------------|
+| PostgreSQL 16 | Main database | `postgres:16-alpine` |
+| Redis 7 | Cache & sessions | `redis:7-alpine` |
+| RabbitMQ 3 | Message queue | `rabbitmq:3-management` |
+| Consul | Service discovery | `consul:latest` |
+| Nginx | Reverse proxy | `nginx:alpine` |
 
 ### 3 Steps to Launch
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/axislab-top/Foundry.git && cd Foundry_01
+git clone https://github.com/axislab-top/Foundry.git && cd Foundry
 
 # 2. Install dependencies
 pnpm install
@@ -73,13 +91,19 @@ pnpm install
 pnpm start:dev:local
 ```
 
-Wait for Docker containers to start (first time takes ~2-3 minutes), then visit:
+> ⏱️ **First launch takes 5-10 minutes** — Docker needs to download all images (~2 GB). Subsequent starts take ~30 seconds.
+
+> 💡 **Windows users**: Run as Administrator if you encounter permission errors.
+
+After containers are healthy, visit:
 
 | Service | URL | Description |
 |---------|-----|-------------|
 | 🖥️ Client UI | http://localhost:3000 | Main interface |
 | 🔧 Admin Panel | http://localhost:5173 | Administrator dashboard |
 | 📡 API Docs | http://localhost:3000/api-docs | Swagger UI (dev environment) |
+| 🐰 RabbitMQ | http://localhost:15672 | Message queue management |
+| 🔍 Consul | http://localhost:8500 | Service discovery UI |
 
 ### Default Admin
 
@@ -89,6 +113,24 @@ Password: changeme
 ```
 
 > ⚠️ Change `DEFAULT_ADMIN_PASSWORD` in production environments.
+
+### Useful Commands
+
+```bash
+pnpm infra:status    # Check container status
+pnpm infra:logs      # View container logs
+pnpm infra:stop      # Stop all containers
+pnpm infra:restart   # Restart all containers
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Port already in use | Run `pnpm infra:stop` first, or change ports in `env.shared.example` |
+| Docker not running | Start Docker Desktop and wait for it to be ready |
+| Out of memory | Increase Docker memory limit to 8 GB+ in Docker Desktop settings |
+| Slow on Windows | Enable WSL 2 backend for Docker Desktop |
 
 ---
 

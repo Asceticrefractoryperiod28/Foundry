@@ -54,17 +54,35 @@ Foundry 是一套**开源的 AI 驱动数字公司平台**。不同于 Agent 框
 
 ## 🚀 快速开始
 
-### 前置要求
+### 系统要求
 
-- [Node.js](https://nodejs.org/) >= 20
-- [pnpm](https://pnpm.io/) >= 10
-- [Docker](https://www.docker.com/) + Docker Compose
+| 要求 | 最低配置 | 推荐配置 |
+|------|---------|---------|
+| **操作系统** | Windows 10+、macOS 12+、Ubuntu 20.04+ | 任意 64 位系统 |
+| **CPU** | 2 核 | 4 核以上 |
+| **内存** | 8 GB | 16 GB |
+| **磁盘** | 10 GB 可用空间 | 20 GB 以上 |
+| **Docker** | 20.10+ | 最新稳定版 |
+| **Node.js** | 20+ | 22 LTS |
+| **pnpm** | 10+ | 最新版 |
+
+### 内置基础设施（无需单独安装）
+
+所有基础设施通过 Docker 运行，**不需要单独安装**：
+
+| 服务 | 用途 | Docker 镜像 |
+|------|------|------------|
+| PostgreSQL 16 | 主数据库 | `postgres:16-alpine` |
+| Redis 7 | 缓存与会话 | `redis:7-alpine` |
+| RabbitMQ 3 | 消息队列 | `rabbitmq:3-management` |
+| Consul | 服务发现 | `consul:latest` |
+| Nginx | 反向代理 | `nginx:alpine` |
 
 ### 3 步启动
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/axislab-top/Foundry.git && cd Foundry_01
+git clone https://github.com/axislab-top/Foundry.git && cd Foundry
 
 # 2. 安装依赖
 pnpm install
@@ -73,13 +91,19 @@ pnpm install
 pnpm start:dev:local
 ```
 
-等待 Docker 容器启动完成（首次约 2-3 分钟），然后访问：
+> ⏱️ **首次启动需要 5-10 分钟** — Docker 需要下载所有镜像（约 2 GB）。后续启动约 30 秒。
+
+> 💡 **Windows 用户**：如遇权限问题，请以管理员身份运行。
+
+容器健康后，访问：
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
 | 🖥️ 用户端 | http://localhost:3000 | 主界面 |
 | 🔧 管理后台 | http://localhost:5173 | 管理员仪表盘 |
 | 📡 API 文档 | http://localhost:3000/api-docs | Swagger UI（开发环境） |
+| 🐰 RabbitMQ | http://localhost:15672 | 消息队列管理 |
+| 🔍 Consul | http://localhost:8500 | 服务发现界面 |
 
 ### 默认管理员
 
@@ -89,6 +113,24 @@ pnpm start:dev:local
 ```
 
 > ⚠️ 生产环境必须修改 `DEFAULT_ADMIN_PASSWORD` 环境变量。
+
+### 常用命令
+
+```bash
+pnpm infra:status    # 查看容器状态
+pnpm infra:logs      # 查看容器日志
+pnpm infra:stop      # 停止所有容器
+pnpm infra:restart   # 重启所有容器
+```
+
+### 常见问题
+
+| 问题 | 解决方案 |
+|------|---------|
+| 端口被占用 | 先运行 `pnpm infra:stop`，或修改 `env.shared.example` 中的端口 |
+| Docker 未运行 | 启动 Docker Desktop 并等待就绪 |
+| 内存不足 | 在 Docker Desktop 设置中将内存限制提高到 8 GB 以上 |
+| Windows 下运行慢 | 启用 Docker Desktop 的 WSL 2 后端 |
 
 ---
 
