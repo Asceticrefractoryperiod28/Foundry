@@ -233,149 +233,130 @@ After completing the 5 steps above:
 
 ### System Overview
 
-```
-                           ┌──────────────────────────────────┐
-                           │           User Layer              │
-                           │                                  │
-                           │   💬 Chat UI          🖥️ Admin   │
-                           │   (Real-time WebSocket)  Panel   │
-                           └──────────────┬───────────────────┘
-                                          │
-                                ┌─────────▼─────────┐
-                                │  Nginx Reverse     │
-                                │  Proxy + SSL       │
-                                └─────────┬─────────┘
-                                          │
-                          ┌───────────────▼───────────────┐
-                          │   Gateway (port 3002)         │
-                          │                               │
-                          │  🔐 JWT Auth + RBAC           │
-                          │  🔌 Socket.IO Hub ────────────┼──→ Redis Pub/Sub
-                          │  🛡️ HMAC Signature / CSRF     │      (collab:notify)
-                          │  📊 Rate Limiting / Circuit   │
-                          │  🔀 Dynamic Route Proxy       │
-                          └───────────┬──────────────────┘
-                                      │
-        ┌─────────────────────────────┼─────────────────────────────┐
-        │                             │                             │
-┌───────▼────────┐     ┌──────────────▼──────────────┐    ┌────────▼────────┐
-│ API Service    │     │   Worker Service            │    │  Webhook Svc   │
-│ (port 3000)    │     │   (port 3004)               │    │  (port 3003)   │
-│                │     │                             │    │                │
-│ Business CRUD  │◄═══►│  🧠 LangGraph Pipelines     │    │ External event │
-│ 46 entities    │ RPC │    ├─ CEO Heartbeat          │    │ receive/       │
-│ RLS multi-     │     │    └─ Collaboration Room     │    │ forward/retry  │
-│ tenancy        │     │  📋 Task Scheduler          │    └────────────────┘
-│ Billing &      │     │  💰 Billing Consumer        │
-│ Budget control │     │  🧩 Memory Consolidation    │
-│ Approval mgmt  │     │  🔧 Tool Registry           │
-│ Memory + RAG   │     │                             │
-│ Skill engine   │     │  RPC──►Runner (sandbox)     │
-└───────┬────────┘     │  RPC──►API  (data access)   │
-        │              └─────────────────────────────┘
-        │
-┌───────▼────────────────────────────────────────────────────────────┐
-│                    Infrastructure Layer                             │
-│                                                                    │
-│  PostgreSQL + pgvector     Redis 7            RabbitMQ             │
-│  ├─ RLS multi-tenancy      ├─ Cache           ├─ Event Bus         │
-│  ├─ 46 entity tables       ├─ Session         ├─ RPC Queues        │
-│  └─ Vector embeddings      └─ Pub/Sub         └─ 15 event domains │
-│                                                                    │
-│  MinIO / S3 / OSS          Temporal (optional)    Grafana Stack    │
-│  └─ File storage           ├─ Heartbeat fanout    ├─ Loki (logs)   │
-│                            ├─ Approval wait       ├─ Promtail      │
-│                            └─ Supervisor review   └─ Grafana       │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph user["👤 User Layer"]
+        chat["💬 Chat UI<br/><i>Real-time WebSocket</i>"]
+        admin["🖥️ Admin Panel<br/><i>Management Dashboard</i>"]
+    end
+
+    nginx["🔀 Nginx Reverse Proxy + SSL"]
+
+    subgraph gateway["🚪 Gateway · port 3002"]
+        gw_auth["🔐 JWT Auth + RBAC"]
+        gw_ws["🔌 Socket.IO Hub"]
+        gw_security["🛡️ HMAC / CSRF / Rate Limit"]
+        gw_route["🔀 Dynamic Route Proxy"]
+    end
+
+    subgraph services["⚙️ Application Services"]
+        api["📡 API Service · port 3000<br/><b>Business Control Plane</b><br/>46 entities · RLS multi-tenancy<br/>Billing · Memory+RAG · Skills"]
+        worker["🧠 Worker Service · port 3004<br/><b>AI Orchestration Engine</b><br/>LangGraph Pipelines · Task Scheduler<br/>Tool Registry · Memory Consolidation"]
+        webhook["🪝 Webhook Service · port 3003<br/>External event receive/forward/retry"]
+    end
+
+    subgraph infra["🏗️ Infrastructure"]
+        pg[("🐘 PostgreSQL + pgvector<br/>RLS multi-tenancy · 46 tables<br/>Vector embeddings")]
+        redis[("⚡ Redis 7<br/>Cache · Session · Pub/Sub")]
+        rabbitmq[("🐇 RabbitMQ<br/>Event Bus · RPC Queues<br/>15 event domains")]
+        minio[("📦 MinIO / S3 / OSS<br/>File storage")]
+        temporal["⏱️ Temporal<br/>Heartbeat fanout · Approval wait<br/>Supervisor review"]
+        grafana["📊 Grafana Stack<br/>Loki · Promtail · Grafana"]
+    end
+
+    subgraph runners["🔒 Execution"]
+        runner["🏃 Runner · gVisor Sandbox<br/>Code execution · Command policy<br/>K8s Jobs isolation"]
+    end
+
+    chat --> nginx
+    admin --> nginx
+    nginx --> gateway
+
+    gw_ws -- "Redis Pub/Sub<br/>collab:notify" --> redis
+    gw_route -- "RPC proxy" --> api
+    gw_route -- "RPC proxy" --> webhook
+
+    api <== "RPC<br/>api-rpc-queue" ==> worker
+    worker ==>|"RPC sandbox"| runner
+    runner ==>|"RPC token"| api
+
+    api --> pg
+    api --> redis
+    api --> rabbitmq
+    worker --> rabbitmq
+    webhook --> rabbitmq
+    api --> minio
+    worker --> pg
+
+    style user fill:#e3f2fd,stroke:#1565c0,color:#000
+    style gateway fill:#fff3e0,stroke:#e65100,color:#000
+    style services fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style infra fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style runners fill:#fce4ec,stroke:#b71c1c,color:#000
 ```
 
 ### Core Differentiator: Autonomous Heartbeat Loop
 
-```
-    ┌─────────────────────────────────────────────────────────┐
-    │  ⏰ TaskHeartbeatScheduler (round-robin across companies)│
-    └──────────────────────────┬──────────────────────────────┘
-                               │  every ~30min
-                               ▼
-              ┌─────────────────────────────────┐
-              │  AutonomousOrchestrator          │
-              │  (LangGraph StateGraph)          │
-              │                                  │
-              │  ┌───────┐    ┌──────┐           │
-              │  │ingest │───►│ plan │           │
-              │  └───┬───┘    └──┬───┘           │
-              │      │           │                │
-              │      │    ┌──────▼──────┐        │
-              │      │    │ CEO LLM     │        │
-              │      │    │ (structured │        │
-              │      │    │  output +   │        │
-              │      │    │  Zod repair)│        │
-              │      │    └──────┬──────┘        │
-              │      │           │                │
-              │      │    ┌──────▼──────────┐    │
-              │      │    │ validatePersist │    │
-              │      │    │ (create tasks)  │    │
-              │      │    └──────┬──────────┘    │
-              │      │           │                │
-              │      │    ┌──────▼──────┐        │
-              │      │    │  summarize  │        │
-              │      │    │  + notify   │──► Chat (streaming)
-              │      │    └──────┬──────┘        │
-              │      │           │                │
-              │      │           ▼                │
-              │      │    Memory + Approval       │
-              │      │    (if needed)             │
-              └──────┘                           │
-                 ▲                               │
-                 └───── repeat every ~30min ──────┘
+> The CEO Agent runs on a **~30min autonomous cycle** — no human prompt needed. Each cycle gathers context from 7 sources, plans via LLM, creates tasks, and streams a report back to chat.
 
-    Context gathered per cycle:
-    ┌────────────────────────────────────────────┐
-    │ Dashboard summary · Memory RAG search      │
-    │ Supervisor lessons · Budget status         │
-    │ Pending/active/review tasks                │
-    │ Organization tree · CEO agent config       │
-    │ Model routing decision (cost-aware)        │
-    └────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph cycle["⏰ Autonomous Heartbeat Cycle"]
+        A["📋 TaskHeartbeatScheduler<br/><i>Round-robin across companies</i>"]
+        B["📥 Ingest Context<br/>Dashboard · Memory RAG<br/>Budgets · Tasks · Lessons<br/>Org tree · Model routing"]
+        C["🧠 CEO LLM Plan<br/><i>Structured output + Zod repair</i><br/>nextStep: generate_tasks | summary_only"]
+        D["✅ Validate & Persist<br/>Create tasks via API RPC<br/>Pull agents into rooms"]
+        E["📝 Summarize & Notify<br/>Stream report to chat room<br/>Store in memory · Request approval"]
+        F["💾 Memory + Approval"]
+    end
+
+    A -- "~30min" --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F -.->|"repeat"| A
+
+    style cycle fill:#fffde7,stroke:#f57f17,color:#000
 ```
 
 ### Core Differentiator: Collaboration Pipeline
 
-```
-    💬 User message in chat room (@CEO or @Agent)
-                    │
-                    ▼
-    ┌───────────────────────────────────┐
-    │ CollaborationRoomPipeline         │
-    │ (LangGraph with interrupt/resume) │
-    │                                   │
-    │         ┌───────────────┐         │
-    │         │resolveDecision│         │
-    │         │ (CEO LLM)    │         │
-    │         └───────┬───────┘         │
-    │                 │                 │
-    │    ┌────────┬───┴───┬────────┐    │
-    │    ▼        ▼       ▼        ▼    │
-    │ 💬💬💬    🤖💬    📋✅     ⏸️👤   │
-    │ discuss  direct  execute  approve │
-    │ (multi-  (single (CEO     (human │
-    │  agent)   agent)  breaks   in the │
-    │                  down to   loop)  │
-    │                  tasks)           │
-    │                                   │
-    │              ┌────────┐           │
-    │              │approval│◄──────────┤
-    │              │  gate  │ LangGraph │
-    │              │(pause) │ interrupt │
-    │              └───┬────┘           │
-    │                  │ resume         │
-    │                  ▼                │
-    │             📋 Execute tasks      │
-    └───────────────────────────────────┘
-                    │
-                    ▼
-    Agent responses → API persist → Redis pub/sub → Socket.IO → Client
-    (streaming 200-char chunks for progressive rendering)
+> User messages trigger a **LangGraph state machine** with 4 intent paths and a **human-in-the-loop approval gate** (interrupt/resume).
+
+```mermaid
+graph TB
+    msg["💬 User message in chat<br/><i>@CEO or @Agent</i>"]
+
+    subgraph pipeline["CollaborationRoomPipeline · LangGraph"]
+        classify["🎯 CEO LLM<br/>Classify Intent"]
+
+        discuss["💬💬💬 Discussion<br/><i>Multi-agent moderated</i>"]
+        direct["🤖 Single Reply<br/><i>@Agent direct answer</i>"]
+        execute["📋 Task Execution<br/><i>CEO breaks down into tasks</i>"]
+        gate["⏸️ Approval Gate<br/><i>LangGraph interrupt()</i><br/>Waits for human decision"]
+
+        approve{"👤 Human<br/>Approve?"}
+    end
+
+    out["Agent responses → API persist<br/>→ Redis Pub/Sub → Socket.IO<br/>→ Client (200-char streaming chunks)"]
+
+    msg --> classify
+    classify -->|"discussion"| discuss
+    classify -->|"direct"| direct
+    classify -->|"execution"| execute
+    classify -->|"approval"| gate
+
+    gate --> approve
+    approve -- "✅ 批准/approve" --> execute
+    approve -- "❌ 拒绝/reject" --> out
+
+    discuss --> out
+    direct --> out
+    execute --> out
+
+    style pipeline fill:#e8eaf6,stroke:#283593,color:#000
+    style gate fill:#fff9c4,stroke:#f9a825,color:#000
 ```
 
 > 📄 Full architecture documentation → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

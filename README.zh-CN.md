@@ -233,145 +233,130 @@ pnpm infra:restart   # 重启所有容器
 
 ### 系统总览
 
-```
-                           ┌──────────────────────────────────┐
-                           │            用户层                 │
-                           │                                  │
-                           │   💬 聊天界面          🖥️ 管理后台 │
-                           │   (实时 WebSocket)       Panel   │
-                           └──────────────┬───────────────────┘
-                                          │
-                                ┌─────────▼─────────┐
-                                │  Nginx 反向代理     │
-                                │  + SSL             │
-                                └─────────┬─────────┘
-                                          │
-                          ┌───────────────▼───────────────┐
-                          │   Gateway (port 3002)         │
-                          │                               │
-                          │  🔐 JWT 认证 + RBAC           │
-                          │  🔌 Socket.IO 中心 ───────────┼──→ Redis Pub/Sub
-                          │  🛡️ HMAC 签名 / CSRF          │      (collab:notify)
-                          │  📊 限流 / 熔断器             │
-                          │  🔀 动态路由代理               │
-                          └───────────┬──────────────────┘
-                                      │
-        ┌─────────────────────────────┼─────────────────────────────┐
-        │                             │                             │
-┌───────▼────────┐     ┌──────────────▼──────────────┐    ┌────────▼────────┐
-│ API 服务       │     │   Worker 服务               │    │  Webhook 服务   │
-│ (port 3000)    │     │   (port 3004)               │    │  (port 3003)    │
-│                │     │                             │    │                 │
-│ 业务 CRUD      │◄═══►│  🧠 LangGraph 管线          │    │ 外部事件        │
-│ 46 个实体      │ RPC │    ├─ CEO 心跳自治           │    │ 接收/转发/重试  │
-│ RLS 多租户     │     │    └─ 协作房间管线           │    └─────────────────┘
-│ 计费与预算控制 │     │  📋 任务调度器               │
-│ 审批管理       │     │  💰 计费消费者               │
-│ 记忆 + RAG     │     │  🧩 记忆整合                 │
-│ 技能引擎       │     │  🔧 工具注册表               │
-└───────┬────────┘     │                             │
-        │              │  RPC──►Runner (沙箱执行)     │
-        │              │  RPC──►API  (数据访问)       │
-        │              └─────────────────────────────┘
-        │
-┌───────▼────────────────────────────────────────────────────────────┐
-│                        基础设施层                                   │
-│                                                                    │
-│  PostgreSQL + pgvector     Redis 7            RabbitMQ             │
-│  ├─ RLS 多租户隔离         ├─ 缓存            ├─ 事件总线           │
-│  ├─ 46 张业务表            ├─ 会话            ├─ RPC 队列           │
-│  └─ 向量嵌入               └─ Pub/Sub         └─ 15 个事件域        │
-│                                                                    │
-│  MinIO / S3 / OSS          Temporal (可选)       Grafana Stack      │
-│  └─ 文件存储               ├─ 心跳扇出           ├─ Loki (日志)      │
-│                            ├─ 审批等待           ├─ Promtail         │
-│                            └─ 主管审查           └─ Grafana          │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph user["👤 用户层"]
+        chat["💬 聊天界面<br/><i>实时 WebSocket</i>"]
+        admin["🖥️ 管理后台<br/><i>管理仪表盘</i>"]
+    end
+
+    nginx["🔀 Nginx 反向代理 + SSL"]
+
+    subgraph gateway["🚪 Gateway · port 3002"]
+        gw_auth["🔐 JWT 认证 + RBAC"]
+        gw_ws["🔌 Socket.IO 中心"]
+        gw_security["🛡️ HMAC / CSRF / 限流"]
+        gw_route["🔀 动态路由代理"]
+    end
+
+    subgraph services["⚙️ 应用服务"]
+        api["📡 API 服务 · port 3000<br/><b>业务控制平面</b><br/>46 实体 · RLS 多租户<br/>计费 · 记忆+RAG · 技能"]
+        worker["🧠 Worker 服务 · port 3004<br/><b>AI 编排引擎</b><br/>LangGraph 管线 · 任务调度<br/>工具注册表 · 记忆整合"]
+        webhook["🪝 Webhook 服务 · port 3003<br/>外部事件 接收/转发/重试"]
+    end
+
+    subgraph infra["🏗️ 基础设施"]
+        pg[("🐘 PostgreSQL + pgvector<br/>RLS 多租户隔离 · 46 张表<br/>向量嵌入")]
+        redis[("⚡ Redis 7<br/>缓存 · 会话 · Pub/Sub")]
+        rabbitmq[("🐇 RabbitMQ<br/>事件总线 · RPC 队列<br/>15 个事件域")]
+        minio[("📦 MinIO / S3 / OSS<br/>文件存储")]
+        temporal["⏱️ Temporal<br/>心跳扇出 · 审批等待<br/>主管审查"]
+        grafana["📊 Grafana Stack<br/>Loki · Promtail · Grafana"]
+    end
+
+    subgraph runners["🔒 执行层"]
+        runner["🏃 Runner · gVisor 沙箱<br/>代码执行 · 命令策略<br/>K8s Jobs 隔离"]
+    end
+
+    chat --> nginx
+    admin --> nginx
+    nginx --> gateway
+
+    gw_ws -- "Redis Pub/Sub<br/>collab:notify" --> redis
+    gw_route -- "RPC 代理" --> api
+    gw_route -- "RPC 代理" --> webhook
+
+    api <== "RPC<br/>api-rpc-queue" ==> worker
+    worker ==>|"RPC 沙箱执行"| runner
+    runner ==>|"RPC 令牌消费"| api
+
+    api --> pg
+    api --> redis
+    api --> rabbitmq
+    worker --> rabbitmq
+    webhook --> rabbitmq
+    api --> minio
+    worker --> pg
+
+    style user fill:#e3f2fd,stroke:#1565c0,color:#000
+    style gateway fill:#fff3e0,stroke:#e65100,color:#000
+    style services fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style infra fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style runners fill:#fce4ec,stroke:#b71c1c,color:#000
 ```
 
 ### 核心差异：自治心跳循环
 
-```
-    ┌─────────────────────────────────────────────────────────┐
-    │  ⏰ TaskHeartbeatScheduler (跨公司轮询调度)              │
-    └──────────────────────────┬──────────────────────────────┘
-                               │  约每 30 分钟
-                               ▼
-              ┌─────────────────────────────────┐
-              │  AutonomousOrchestrator          │
-              │  (LangGraph StateGraph)          │
-              │                                  │
-              │  ┌───────┐    ┌──────┐           │
-              │  │ingest │───►│ plan │           │
-              │  └───┬───┘    └──┬───┘           │
-              │      │           │                │
-              │      │    ┌──────▼──────┐        │
-              │      │    │  CEO LLM    │        │
-              │      │    │ (结构化输出  │        │
-              │      │    │  + Zod 修复) │        │
-              │      │    └──────┬──────┘        │
-              │      │           │                │
-              │      │    ┌──────▼──────────┐    │
-              │      │    │ validatePersist │    │
-              │      │    │  (创建任务)      │    │
-              │      │    └──────┬──────────┘    │
-              │      │           │                │
-              │      │    ┌──────▼──────┐        │
-              │      │    │  summarize  │        │
-              │      │    │  + notify   │──► 聊天室 (流式输出)
-              │      │    └──────┬──────┘        │
-              │      │           │                │
-              │      │           ▼                │
-              │      │    记忆存储 + 审批请求      │
-              └──────┘                           │
-                 ▲                               │
-                 └───── 每 ~30 分钟重复 ──────────┘
+> CEO Agent 运行在 **约 30 分钟的自治循环** 上 — 无需人类提示。每轮从 7 个来源采集上下文，通过 LLM 规划，创建任务，并将报告流式推送到聊天室。
 
-    每轮采集的上下文：
-    ┌────────────────────────────────────────────┐
-    │ 仪表盘摘要 · 记忆 RAG 搜索                 │
-    │ 主管经验教训 · 预算状态                     │
-    │ 待处理/进行中/审查中的任务                  │
-    │ 组织架构树 · CEO Agent 配置                 │
-    │ 模型路由决策 (成本感知)                     │
-    └────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph cycle["⏰ 自治心跳循环"]
+        A["📋 TaskHeartbeatScheduler<br/><i>跨公司轮询调度</i>"]
+        B["📥 采集上下文<br/>仪表盘 · 记忆 RAG<br/>预算 · 任务 · 经验教训<br/>组织架构 · 模型路由"]
+        C["🧠 CEO LLM 规划<br/><i>结构化输出 + Zod 修复</i><br/>nextStep: 生成任务 | 仅摘要"]
+        D["✅ 校验并持久化<br/>通过 API RPC 创建任务<br/>将 Agent 拉入协作房间"]
+        E["📝 摘要并通知<br/>流式推送报告到聊天室<br/>存储记忆 · 请求审批"]
+        F["💾 记忆 + 审批"]
+    end
+
+    A -- "~30min" --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F -.->|"循环"| A
+
+    style cycle fill:#fffde7,stroke:#f57f17,color:#000
 ```
 
 ### 核心差异：协作管线
 
-```
-    💬 用户在聊天室发消息 (@CEO 或 @Agent)
-                    │
-                    ▼
-    ┌───────────────────────────────────┐
-    │ CollaborationRoomPipeline         │
-    │ (LangGraph + interrupt/resume)    │
-    │                                   │
-    │         ┌───────────────┐         │
-    │         │resolveDecision│         │
-    │         │ (CEO LLM)    │         │
-    │         └───────┬───────┘         │
-    │                 │                 │
-    │    ┌────────┬───┴───┬────────┐    │
-    │    ▼        ▼       ▼        ▼    │
-    │ 💬💬💬    🤖💬    📋✅     ⏸️👤   │
-    │ 讨论     直达    执行     审批    │
-    │ (多Agent  (单个   (CEO     (人机  │
-    │  协作)    Agent   拆解为   协作)  │
-    │          回复)   任务)           │
-    │                                   │
-    │              ┌────────┐           │
-    │              │审批门  │◄──────────┤
-    │              │(暂停)  │ LangGraph │
-    │              └───┬────┘ interrupt │
-    │                  │ resume         │
-    │                  ▼                │
-    │             📋 执行任务           │
-    └───────────────────────────────────┘
-                    │
-                    ▼
-    Agent 回复 → API 持久化 → Redis Pub/Sub → Socket.IO → 客户端
-    (200 字符分块流式输出，渐进式渲染)
+> 用户消息触发一个 **LangGraph 状态机**，包含 4 条意图路径和一个 **人机协作审批门**（interrupt/resume）。
+
+```mermaid
+graph TB
+    msg["💬 用户在聊天室发消息<br/><i>@CEO 或 @Agent</i>"]
+
+    subgraph pipeline["CollaborationRoomPipeline · LangGraph"]
+        classify["🎯 CEO LLM<br/>意图分类"]
+
+        discuss["💬💬💬 多方讨论<br/><i>多 Agent 协作</i>"]
+        direct["🤖 单独回复<br/><i>@Agent 直接回答</i>"]
+        execute["📋 任务执行<br/><i>CEO 拆解为子任务</i>"]
+        gate["⏸️ 审批门<br/><i>LangGraph interrupt()</i><br/>等待人类决策"]
+
+        approve{"👤 人类<br/>是否批准？"}
+    end
+
+    out["Agent 回复 → API 持久化<br/>→ Redis Pub/Sub → Socket.IO<br/>→ 客户端 (200字符流式分块)"]
+
+    msg --> classify
+    classify -->|"讨论"| discuss
+    classify -->|"直达"| direct
+    classify -->|"执行"| execute
+    classify -->|"审批"| gate
+
+    gate --> approve
+    approve -- "✅ 批准" --> execute
+    approve -- "❌ 拒绝" --> out
+
+    discuss --> out
+    direct --> out
+    execute --> out
+
+    style pipeline fill:#e8eaf6,stroke:#283593,color:#000
+    style gate fill:#fff9c4,stroke:#f9a825,color:#000
 ```
 
 > 📄 完整架构文档 → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
