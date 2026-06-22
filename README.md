@@ -72,13 +72,20 @@ All infrastructure runs in Docker — **you don't need to install these separate
 
 | Service | Purpose | Docker Image |
 |---------|---------|--------------|
-| PostgreSQL 16 | Main database | `postgres:16-alpine` |
+| PostgreSQL 18 | Main database | `postgres:18-alpine` |
 | Redis 7 | Cache & sessions | `redis:7-alpine` |
 | RabbitMQ 3 | Message queue | `rabbitmq:3-management` |
 | Consul | Service discovery | `consul:latest` |
 | Nginx | Reverse proxy | `nginx:alpine` |
 
-### 3 Steps to Launch
+### One Command Setup (Recommended)
+
+```bash
+git clone https://github.com/axislab-top/Foundry.git && cd Foundry
+pnpm setup:dev   # copy env → install → start → migrate
+```
+
+### Or Step by Step
 
 ```bash
 # 1. Clone the repository
@@ -87,15 +94,21 @@ git clone https://github.com/axislab-top/Foundry.git && cd Foundry
 # 2. Install dependencies
 pnpm install
 
-# 3. Start all services (infrastructure + application)
+# 3. Configure environment (optional — defaults work for local dev)
+cp env.shared.example .env.shared
+
+# 4. Start all services (infrastructure + application)
 pnpm start:dev:local
+
+# 5. Initialize database (create tables & seed data)
+pnpm migrate:run
 ```
 
 > ⏱️ **First launch takes 5-10 minutes** — Docker needs to download all images (~2 GB). Subsequent starts take ~30 seconds.
 
 > 💡 **Windows users**: Run as Administrator if you encounter permission errors.
 
-After containers are healthy, visit:
+After containers are healthy and migrations complete, visit:
 
 | Service | URL | Description |
 |---------|-----|-------------|
@@ -134,21 +147,18 @@ pnpm infra:restart   # Restart all containers
 
 ### First Time Setup
 
-After starting the services for the first time:
+After completing the 5 steps above:
 
 ```bash
-# 1. Run database migrations (create tables)
-pnpm migrate:run
-
-# 2. Open http://localhost:3000 and register your first account
+# 1. Open http://localhost:3000 and register your first account
 #    The first registered account automatically becomes admin
 
-# 3. Login to Admin Panel (http://localhost:5173) and configure:
+# 2. Login to Admin Panel (http://localhost:5173) and configure:
 #    - LLM Keys (OpenAI, Claude, etc.) in Settings → LLM Keys
 #    - Company profile in Settings → Company
 ```
 
-> ⚠️ **Important**: The database starts empty. You need to run migrations and register your own admin account. No default credentials are provided for security reasons.
+> ⚠️ **Important**: The first registered account automatically becomes admin. No default credentials are provided for security reasons.
 
 ### What's NOT Included (You Need to Configure)
 

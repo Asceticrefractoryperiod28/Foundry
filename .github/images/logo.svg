@@ -5,8 +5,9 @@
       <stop offset="100%" style="stop-color:#1565C0"/>
     </linearGradient>
   </defs>
-  <!-- Square with sharp corners (rx=0 for Xiaomi style) -->
-  <rect width="512" height="512" rx="0" fill="url(#blue)"/>
+  <!-- Superellipse-like shape (like Xiaomi logo) with subtle corner rounding -->
+  <!-- Using a squircle with rx=80 for that smooth but not circular feel -->
+  <rect x="0" y="0" width="512" height="512" rx="80" ry="80" fill="url(#blue)"/>
   <!-- White F letter, centered -->
   <text x="256" y="370" font-family="'SF Pro Display', -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="380" font-weight="700" fill="white" text-anchor="middle" letter-spacing="-10">F</text>
 </svg>

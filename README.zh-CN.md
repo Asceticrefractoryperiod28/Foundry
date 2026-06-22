@@ -72,13 +72,20 @@ Foundry 是一套**开源的 AI 驱动数字公司平台**。不同于 Agent 框
 
 | 服务 | 用途 | Docker 镜像 |
 |------|------|------------|
-| PostgreSQL 16 | 主数据库 | `postgres:16-alpine` |
+| PostgreSQL 18 | 主数据库 | `postgres:18-alpine` |
 | Redis 7 | 缓存与会话 | `redis:7-alpine` |
 | RabbitMQ 3 | 消息队列 | `rabbitmq:3-management` |
 | Consul | 服务发现 | `consul:latest` |
 | Nginx | 反向代理 | `nginx:alpine` |
 
-### 3 步启动
+### 一键启动（推荐）
+
+```bash
+git clone https://github.com/axislab-top/Foundry.git && cd Foundry
+pnpm setup:dev   # 配置环境 → 安装依赖 → 启动服务 → 初始化数据库
+```
+
+### 或者分步执行
 
 ```bash
 # 1. 克隆仓库
@@ -87,15 +94,21 @@ git clone https://github.com/axislab-top/Foundry.git && cd Foundry
 # 2. 安装依赖
 pnpm install
 
-# 3. 启动所有服务（基础设施 + 应用）
+# 3. 配置环境变量（可选 — 本地开发用默认值即可）
+cp env.shared.example .env.shared
+
+# 4. 启动所有服务（基础设施 + 应用）
 pnpm start:dev:local
+
+# 5. 初始化数据库（建表 + 种子数据）
+pnpm migrate:run
 ```
 
 > ⏱️ **首次启动需要 5-10 分钟** — Docker 需要下载所有镜像（约 2 GB）。后续启动约 30 秒。
 
 > 💡 **Windows 用户**：如遇权限问题，请以管理员身份运行。
 
-容器健康后，访问：
+容器健康且迁移完成后，访问：
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
@@ -134,21 +147,18 @@ pnpm infra:restart   # 重启所有容器
 
 ### 首次使用
 
-首次启动服务后：
+完成上述 5 步后：
 
 ```bash
-# 1. 运行数据库迁移（建表）
-pnpm migrate:run
-
-# 2. 打开 http://localhost:3000 注册第一个账号
+# 1. 打开 http://localhost:3000 注册第一个账号
 #    第一个注册的账号自动成为管理员
 
-# 3. 登录管理后台（http://localhost:5173）配置：
+# 2. 登录管理后台（http://localhost:5173）配置：
 #    - LLM Key（OpenAI、Claude 等）在 设置 → LLM Keys
 #    - 公司信息在 设置 → 公司
 ```
 
-> ⚠️ **重要**：数据库初始为空。你需要运行迁移并注册自己的管理员账号。出于安全考虑，不提供默认凭据。
+> ⚠️ **重要**：第一个注册的账号自动成为管理员。出于安全考虑，不提供默认凭据。
 
 ### 需要你配置的内容
 
