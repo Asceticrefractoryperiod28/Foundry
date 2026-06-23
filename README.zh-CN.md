@@ -133,6 +133,14 @@ pnpm migrate:run
 
 > ⚠️ 生产环境必须修改 `DEFAULT_ADMIN_PASSWORD` 环境变量。
 
+### 默认服务账号
+
+| 服务 | 地址 | 用户名 | 密码 |
+|------|------|--------|------|
+| 🔧 管理后台 | http://localhost:3105 | `admin` | `changeme` |
+| 📊 Grafana | http://localhost:4000 | `admin` | `admin` |
+| 🐰 RabbitMQ | http://localhost:15672 | `guest` | `guest` |
+
 ### 常用命令
 
 ```bash

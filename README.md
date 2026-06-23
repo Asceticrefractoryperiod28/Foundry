@@ -133,6 +133,14 @@ The admin account is **automatically created** on first startup:
 
 > ⚠️ Change `DEFAULT_ADMIN_PASSWORD` in production environments.
 
+### Default Service Accounts
+
+| Service | URL | Username | Password |
+|---------|-----|----------|----------|
+| 🔧 Admin Panel | http://localhost:3105 | `admin` | `changeme` |
+| 📊 Grafana | http://localhost:4000 | `admin` | `admin` |
+| 🐰 RabbitMQ | http://localhost:15672 | `guest` | `guest` |
+
 ### Useful Commands
 
 ```bash
