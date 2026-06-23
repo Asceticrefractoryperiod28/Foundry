@@ -1,3 +1,40 @@
+// Load .env before app bootstrap.
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+
+const possibleEnvPaths = [
+  resolve(process.cwd(), '.env'),
+  resolve(process.cwd(), '.env.shared'),
+  resolve(process.cwd(), 'apps/logging/.env'),
+];
+
+let envLoaded = false;
+for (const envPath of possibleEnvPaths) {
+  if (!existsSync(envPath)) continue;
+  try {
+    const envFile = readFileSync(envPath, 'utf-8');
+    envFile.split(/\r?\n/).forEach((line) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine || trimmedLine.startsWith('#')) return;
+      const equalIndex = trimmedLine.indexOf('=');
+      if (equalIndex <= 0) return;
+      const key = trimmedLine.substring(0, equalIndex).trim();
+      let value = trimmedLine.substring(equalIndex + 1).trim();
+      if (!value.startsWith('"') && !value.startsWith("'")) {
+        const commentIndex = value.indexOf('#');
+        if (commentIndex >= 0) value = value.substring(0, commentIndex).trim();
+      }
+      const cleanValue = value.replace(/^["'](.*)["']$/, '$1');
+      if (!process.env[key] && key) process.env[key] = cleanValue;
+    });
+    envLoaded = true;
+    break;
+  } catch { continue; }
+}
+if (!envLoaded) {
+  console.warn('Warning: Could not find .env file, using system environment variables only');
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
