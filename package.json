@@ -14,7 +14,7 @@
     "ci:local": "node scripts/ci-local.mjs",
     "lint": "turbo run lint",
     "infra:start": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml up -d",
-    "infra:start:core": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml up -d postgres redis rabbitmq loki promtail grafana clickhouse",
+    "infra:start:core": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml up -d --force-recreate postgres redis rabbitmq loki promtail grafana clickhouse",
     "infra:stop": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml down",
     "infra:restart": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml restart",
     "infra:status": "docker-compose -f deployment/docker/docker-compose.yml -f deployment/docker/docker-compose.dev.yml ps",
