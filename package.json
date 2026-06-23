@@ -26,7 +26,7 @@
     "start:all": "pnpm infra:start",
     "start:dev": "pnpm infra:start",
     "setup:dev": "pnpm preflight:env && pnpm install && pnpm build:packages && pnpm infra:start:core && pnpm infra:wait-db && pnpm infra:create-dbs && pnpm migrate:run && pnpm dev:minimal",
-    "infra:create-dbs": "docker exec service-postgres-dev psql -U postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'gateway_db'\" | grep -q 1 || docker exec service-postgres-dev psql -U postgres -c \"CREATE DATABASE gateway_db;\" && echo \"✅ gateway_db is ready\"",
+    "infra:create-dbs": "node -e \"const{execSync:c}=require('child_process');try{c('docker exec service-postgres-dev psql -U postgres -c \\\"CREATE DATABASE gateway_db;\\\"');console.log('✅ Created gateway_db')}catch(e){if(e.stderr&&e.stderr.includes('already exists')){console.log('ℹ️  gateway_db already exists')}else{console.log('ℹ️  gateway_db: '+e.message)}}\"",
     "infra:wait-db": "node -e \"const net=require('net');let attempts=0;function tryConnect(){attempts++;const s=net.createConnection({host:'localhost',port:5432},()=>{console.log('✅ PostgreSQL is ready');s.end();process.exit(0)});s.on('error',()=>{s.destroy();if(attempts>=30){console.error('❌ PostgreSQL not ready after 30 attempts');process.exit(1)}console.log('⏳ Waiting for PostgreSQL... ('+attempts+'/30)');setTimeout(tryConnect,2000)});s.setTimeout(3000,()=>{s.destroy();if(attempts>=30){console.error('❌ PostgreSQL not ready after 30 attempts');process.exit(1)}console.log('⏳ Waiting for PostgreSQL... ('+attempts+'/30)');setTimeout(tryConnect,2000)})}tryConnect();\"",
 "build:packages": "turbo run build --continue",
     "start:dev:local": "pnpm preflight:env && pnpm infra:start && pnpm infra:wait-db && pnpm dev",
