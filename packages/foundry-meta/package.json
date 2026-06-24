@@ -1,0 +1,12 @@
+{
+  "name": "@axislab-top/foundry-meta",
+  "version": "1.0.0",
+  "description": "Foundry platform metadata package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"OK\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
